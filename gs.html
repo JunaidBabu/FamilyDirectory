@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Family Directory</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="container">
+        <h1></h1>
+        <h2>Family Directory</h2>
+
+
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon1">🔍</span>
+            </div>
+            <input type="text" class="form-control" placeholder="Search" aria-label="Recipient's username"
+                aria-describedby="basic-addon2">
+        </div>
+        <!-- <pre id="content" style="white-space: pre-wrap;"></pre> -->
+        <div id="content">
+
+        </div>
+
+        <!--Add buttons to initiate auth sequence and sign out-->
+        <button id="authorize_button" style="display: none;">Authorize</button>
+        <button id="signout_button" style="display: none;">Sign Out</button>
+    </div>
+
+    <script type="text/javascript">
+        var CLIENT_ID = '776685009882-v1kcqutjjt9k7h1e2qobjugqrgn9srel.apps.googleusercontent.com';
+        var API_KEY = 'AIzaSyByj_36FwggBH8kjW_yjY01tIjYvCTdeso';
+        var DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
+        var SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
+        var data = {};
+
+        var authorizeButton = document.getElementById('authorize_button');
+        var signoutButton = document.getElementById('signout_button');
+
+        /**
+         *  On load, called to load the auth2 library and API client library.
+         */
+        function handleClientLoad() {
+            gapi.load('client:auth2', initClient);
+        }
+
+        /**
+         *  Initializes the API client library and sets up sign-in state
+         *  listeners.
+         */
+        function initClient() {
+            gapi.client.init({
+                apiKey: API_KEY,
+                clientId: CLIENT_ID,
+                discoveryDocs: DISCOVERY_DOCS,
+                scope: SCOPES
+            }).then(function () {
+                // Listen for sign-in state changes.
+                gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+
+                // Handle the initial sign-in state.
+                updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+                authorizeButton.onclick = handleAuthClick;
+                signoutButton.onclick = handleSignoutClick;
+            }, function (error) {
+                appendPre(JSON.stringify(error, null, 2));
+            });
+        }
+
+        /**
+         *  Called when the signed in status changes, to update the UI
+         *  appropriately. After a sign-in, the API is called.
+         */
+        function updateSigninStatus(isSignedIn) {
+            if (isSignedIn) {
+                authorizeButton.style.display = 'none';
+                signoutButton.style.display = 'block';
+                listMajors();
+            } else {
+                authorizeButton.style.display = 'block';
+                signoutButton.style.display = 'none';
+            }
+        }
+
+        /**
+         *  Sign in the user upon button click.
+         */
+        function handleAuthClick(event) {
+            gapi.auth2.getAuthInstance().signIn();
+        }
+
+        /**
+         *  Sign out the user upon button click.
+         */
+        function handleSignoutClick(event) {
+            gapi.auth2.getAuthInstance().signOut();
+        }
+
+        /**
+         * Append a pre element to the body containing the given message
+         * as its text node. Used to display the results of the API call.
+         *
+         * @param {string} message Text to be placed in pre element.
+         */
+
+        function appendPre(message) {
+            var pre = document.getElementById('content');
+            var textContent = document.createTextNode(message + '\n');
+            pre.appendChild(textContent);
+        }
+        function getSpouse(Pid) {
+            str = `<ul class="list-group">`;
+            sps = data[Pid]["Spouse"].split(",")
+            sps.forEach(element => {
+                if (element.length > 0) {
+                    element = element.trim();
+                    str += `<li class="list-group-item"><a onclick="visualiseData('` + element + `');" href="#` + element + `">` + data[element]["Full Name"] + `</a></li>`;
+
+                }
+            });
+            str += `</ul>`;
+            return str;
+        }
+        function getKids(Pid) {
+            kids = [];
+
+            for (p in data) {
+                if (data[p]["Mother"] == Pid || data[p]["Father"] == Pid) {
+                    kids.push(p);
+                }
+            }
+            str = `<ul class="list-group">`;
+            kids.forEach(element => {
+
+                str += `<li class="list-group-item"><a onclick="visualiseData('` + element + `');" href="#` + element + `">` + data[element]["Full Name"] + `</a></li>`;
+            });
+            str += `</ul>`;
+            return str;
+        }
+        function getSiblings(Pid) {
+            sibs = [];
+            console.log(Pid);
+
+            for (p in data) {
+                if ((data[p]["Mother"] == data[Pid]["Mother"] && data[Pid]["Mother"]) ||
+                    (data[p]["Father"] == data[Pid]["Father"] && data[Pid]["Father"])) {
+                    sibs.push(p);
+                }
+            }
+            str = `<ul class="list-group">`;
+            sibs.forEach(element => {
+                if (element != Pid)
+                    str += `<li class="list-group-item"><a onclick="visualiseData('` + element + `');" href="#` + element + `">` + data[element]["Full Name"] + `</a></li>`;
+            });
+            str += `</ul>`;
+            return str;
+        }
+        function visualiseData(Pid) {
+            var pre = document.getElementById('content');
+            pre.innerHTML = `<div class="card-body">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <h6 class="mb-0">Full Name</h6>
+                    </div>
+                    <div class="col-sm-9 text-secondary">
+                        `+ data[Pid]["Full Name"] + `
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-3">
+                        <h6 class="mb-0">Nick Name</h6>
+                    </div>
+                    <div class="col-sm-9 text-secondary">
+                        `+ data[Pid]["Nick Name"] + `
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-3">
+                        <h6 class="mb-0">Email</h6>
+                    </div>
+                    <div class="col-sm-9 text-secondary">
+                        `+ data[Pid]["Email"] + `
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-3">
+                        <h6 class="mb-0">Mobile</h6>
+                    </div>
+                    <div class="col-sm-9 text-secondary">
+                        <a href="tel:`+ data[Pid]["Mobile"] + `">` + data[Pid]["Mobile"] + `</a> <a href="https://api.whatsapp.com/send?phone=` + data[Pid]["Mobile"] + `">WhatsApp</a>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-3">
+                        <h6 class="mb-0">Date of Birth</h6>
+                    </div>
+                    <div class="col-sm-9 text-secondary">
+                        `+ data[Pid]["DoB"] + `
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-3">
+                        <h6 class="mb-0">Address</h6>
+                    </div>
+                    <div class="col-sm-9 text-secondary">
+                        `+ data[Pid]["Address"] + `
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-3">
+                        <h6 class="mb-0">Spouse</h6>
+                    </div>
+                    <div class="col-sm-9 text-secondary">
+                        `+ getSpouse(Pid) + `
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-3">
+                        <h6 class="mb-0">Mother</h6>
+                    </div>
+                    <div class="col-sm-9 text-secondary">
+                        <a onclick="visualiseData('` + data[Pid]["Mother"] + `');" href="#` + data[Pid]["Mother"] + `">` + (data[Pid]["Mother"] ? data[data[Pid]["Mother"]]["Full Name"] : "") + `</a>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-3">
+                        <h6 class="mb-0">Father</h6>
+                    </div>
+                    <div class="col-sm-9 text-secondary">
+                        <a onclick="visualiseData('` + data[Pid]["Father"] + `');" href="#` + data[Pid]["Father"] + `">` + (data[Pid]["Father"] ? data[data[Pid]["Father"]]["Full Name"] : "") + `</a>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-3">
+                        <h6 class="mb-0">Kids</h6>
+                    </div>
+                    <div class="col-sm-9 text-secondary">
+                        `+ getKids(Pid) + `
+                        
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-3">
+                        <h6 class="mb-0">Siblings</h6>
+                    </div>
+                    <div class="col-sm-9 text-secondary">
+                        `+ getSiblings(Pid) + `
+                    </div>
+                </div>
+                <hr>
+
+            </div>`;
+        }
+        function extractdata(raw) {
+            url = window.location.href;
+            var Pid = url.split("#")[1];
+            headers = raw["values"][0];
+            console.log(headers);
+            raw["values"].shift();
+            raw["values"].forEach(raw => {
+                data[raw[0]] = {};
+                for (i in raw) {
+                    data[raw[0]][headers[i]] = raw[i];
+                }
+            });
+            console.log(data);
+            if (!Pid) {
+                Pid = raw["values"][0][0];
+            }
+            visualiseData(Pid);
+        }
+
+        /**
+         * Print the names and majors of students in a sample spreadsheet:
+         * https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
+         */
+        function listMajors() {
+            gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: '1oanbqvekLq1LDOCADYtjI-nBJAyigxVaqkJpgLgHeJ8',
+                range: 'Sheet1',
+            }).then(function (response) {
+                var range = response.result;
+                extractdata(range);
+
+                // if (range.values.length > 0) {
+                //     appendPre('Name, Major:');
+                //     for (i = 0; i < range.values.length; i++) {
+                //         var row = range.values[i];
+                //         // Print columns A and E, which correspond to indices 0 and 4.
+                //         appendPre(row[0] + ', ' + row[1]);
+                //     }
+                // } else {
+                //     appendPre('No data found.');
+                // }
+            }, function (response) {
+                appendPre('Error: ' + response.result.error.message);
+            });
+        }
+
+    </script>
+
+    <script async defer src="https://apis.google.com/js/api.js" onload="this.onload=function(){};handleClientLoad()"
+        onreadystatechange="if (this.readyState === 'complete') this.onload()">
+        </script>
+</body>
+
+</html>
