@@ -187,7 +187,7 @@
                         <h6 class="mb-0">Email</h6>
                     </div>
                     <div class="col-sm-9 text-secondary">
-                        `+ data[Pid]["Email"] + `
+                        `+ (data[Pid]["Email"]?data[Pid]["Email"]:"") + `
                     </div>
                 </div>
                 <hr>
@@ -196,7 +196,7 @@
                         <h6 class="mb-0">Mobile</h6>
                     </div>
                     <div class="col-sm-9 text-secondary">
-                        <a href="tel:`+ data[Pid]["Mobile"] + `">` + data[Pid]["Mobile"] + `</a> <a href="https://api.whatsapp.com/send?phone=` + data[Pid]["Mobile"] + `">WhatsApp</a>
+                        `+(data[Pid]["Mobile"]?`<a href="tel:`+ data[Pid]["Mobile"] + `">` + data[Pid]["Mobile"] + `</a> <a href="https://api.whatsapp.com/send?phone=` + data[Pid]["Mobile"] + `">WhatsApp</a>`:"")+`
                     </div>
                 </div>
                 <hr>
@@ -205,7 +205,7 @@
                         <h6 class="mb-0">Date of Birth</h6>
                     </div>
                     <div class="col-sm-9 text-secondary">
-                        `+ data[Pid]["DoB"] + `
+                        `+ (data[Pid]["DoB"]?data[Pid]["DoB"]:"") + `
                     </div>
                 </div>
                 <hr>
@@ -214,7 +214,7 @@
                         <h6 class="mb-0">Address</h6>
                     </div>
                     <div class="col-sm-9 text-secondary">
-                        `+ data[Pid]["Address"] + `
+                        `+ (data[Pid]["Address"]?data[Pid]["Address"]:"") + `
                     </div>
                 </div>
                 <hr>
